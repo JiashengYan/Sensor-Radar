@@ -19,18 +19,15 @@ InitialRange=110;
 c = 3e8;
 
 fprintf("Initial velocity = %d and range = %d\n", Velocity, InitialRange);
-
-
 %% FMCW Waveform Generation
 
 % *%TODO* :
-%Design the FMCW waveform by giving the specs of each of its parameters.
+% Design the FMCW waveform by giving the specs of each of its parameters.
 % Calculate the Bandwidth (B), Chirp Time (Tchirp) and Slope (slope) of the FMCW
 % chirp using the requirements above.
-Bsweep= c / (2*1);
-Tchirp= 5.5 * (2 * 200 / c);
-slope = Bsweep/Tchirp;
-
+B = c /(2*1);
+Tchirp = 5.5 * 200 / (c/2);
+slope = B / Tchirp;
 
 %Operating carrier frequency of Radar 
 fc= 77e9;             %carrier freq
@@ -67,21 +64,20 @@ for i=1:length(t)
     % *%TODO* :
     %For each time stamp update the Range of the Target for constant velocity. 
     r_t(i) = InitialRange + Velocity*t(i);
-    td(i) = 2 * r_t(i)/c;
-    
+    td(i) = r_t(i)*2/c;
     % *%TODO* :
     %For each time sample we need update the transmitted and
     %received signal. 
-    Tx(i) = cos(2*pi*(fc*t(i) + slope*(t(i)^2)/2 ));
+    Tx(i) = cos(2*pi*(fc*t(i) + slope*(t(i)^2)/2));
     delay = t(i) - td(i);
-    Rx (i) = cos(2*pi*( fc*delay + slope * (delay^2)/2 )) ;
+    Rx(i) = cos(2*pi*(fc*delay + slope*(delay^2)/2));
     
     % *%TODO* :
     %Now by mixing the Transmit and Receive generate the beat signal
     %This is done by element wise matrix multiplication of Transmit and
     %Receiver Signal
     Mix(i) = Tx(i)*Rx(i);
-       
+    
 end
 
 %% RANGE MEASUREMENT
@@ -91,33 +87,31 @@ end
 %reshape the vector into Nr*Nd array. Nr and Nd here would also define the size of
 %Range and Doppler FFT respectively.
 Mix = reshape(Mix, [Nr, Nd]);
-
  % *%TODO* :
 %run the FFT on the beat signal along the range bins dimension (Nr) and
 %normalize.
 signal_fft = fft(Mix, Nr); 
-L = Tchirp * Bsweep;
+L = Nr;
  % *%TODO* :
 % Take the absolute value of FFT output
 signal_fft = abs(signal_fft/L);
-
  % *%TODO* :
 % Output of FFT is double sided signal, but we are interested in only one side of the spectrum.
 % Hence we throw out half of the samples.
-
 signal_fft = signal_fft(1:L/2+1);
+disp(signal_fft);
+
 
 %plotting the range
 
  % *%TODO* :
  % plot FFT output 
-f = Bsweep*(0:(L/2))/L;
+f = ((0:(L/2))/L)*(L/Tchirp);
 figure('Name','FFT Output')
 plot(f,signal_fft)
-R = (c*Tchirp*f)/(2*Bsweep);
+R = (c*Tchirp*f)/(2*B);
 figure('Name','Range from First FFT')
 plot(R,signal_fft)
-
  
 axis ([0 200 0 1]);
 
@@ -149,7 +143,9 @@ RDM = 10*log10(RDM) ;
 %use the surf function to plot the output of 2DFFT and to show axis in both
 %dimensions
 doppler_axis = linspace(-100,100,Nd);
+
 range_axis = linspace(-200,200,Nr/2)*((Nr/2)/400);
+
 figure,surf(doppler_axis,range_axis,RDM);
 
 %% CFAR implementation
@@ -160,17 +156,14 @@ figure,surf(doppler_axis,range_axis,RDM);
 %Select the number of Training Cells in both the dimensions.
 Tr = 14;
 Td = 6;
-
 % *%TODO* :
 %Select the number of Guard Cells in both dimensions around the Cell under 
 %test (CUT) for accurate estimation
 Gr = 6;
 Gd = 3;
-
 % *%TODO* :
 % offset the threshold by SNR value in dB
 offset = 6;
-
 % *%TODO* :
 %Create a vector to store noise_level for each iteration on training cells
 noise_level = zeros(1,1);
