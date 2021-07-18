@@ -25,7 +25,7 @@ Using the frequency from above, we calculate the range as
 
 
 ```
-f = Bsweep*(0:(L/2))/L;
+f = ((0:(L/2))/L)*(L/Tchirp);
 R = (c*Tchirp*f)/(2*Bsweep);
 ```
 
